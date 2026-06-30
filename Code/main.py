@@ -1,5 +1,5 @@
 # --- Import Dependencies --- #
-from PySide6.QtWidgets import QWidget, QApplication, QMainWindow, QPushButton, QVBoxLayout
+from PySide6.QtWidgets import QWidget, QApplication, QMainWindow, QPushButton, QVBoxLayout, QHBoxLayout
 from PySide6.QtCore import Qt
 import sys
 
@@ -10,57 +10,85 @@ class MainWindow(QMainWindow):
 
         # --- Window Attributes --- #
         self.setWindowFlags(
-            Qt.WindowType.FramelessWindowHint
+            Qt.WindowType.FramelessWindowHint,
             )
         self.setAttribute(
             Qt.WA_TranslucentBackground
         )
 
+        # --- Settings Button --- #
+    
         # --- Close button --- #
-        self.close_button = QPushButton("X") # Define button
+        self.close_button = QPushButton("Quit") # Define button
         self.close_button.clicked.connect(self.close) # Button action
+        self.close_button.setFixedSize(40, 20)
         self.close_button.setStyleSheet("""
-                                        QPushButton {
-                                            /* Dimensions */
-                                            width: 20px;
-                                            height: 20px;
-                                        
+                                        QPushButton 
+                                        {                                        
                                             /* Colors */
                                             color: #FFFFFF;
-                                            background-color: #000000;
+                                            background-color: rgba(30, 30, 30, 0.0);
 
                                             /* Fonts */
-                                            font-size: 16px;
-                                            font-weight: bold;
+                                            font-size: 14px;
+                                            font-weight: 500;
+
                                         
                                             /* Borders */
                                             border: none;
-                                            border-radius: 5px;
+                                            border-radius: 6px;
+                                        }
+
+                                        QPushButton:hover
+                                        {
+                                            /* Colors */
+                                            color: #FFFFFF;
+                                            background-color: rgba(255, 65, 65, 0.5);
                                         }
                                         """)
         
         # --- Layout --- #
-        layout = QVBoxLayout()
-        layout.addWidget(self.close_button)
+        main_layout = QVBoxLayout()
+        top_bar = QHBoxLayout()
+        top_bar.addStretch()
+        top_bar.addWidget(self.close_button)
+        top_bar_widget = QWidget()
+        top_bar_widget.setLayout(top_bar)
+
+        main_layout.addWidget(top_bar_widget)
+        main_layout.addStretch()
 
         # --- Container --- #
         container = QWidget()
         container.setStyleSheet("""
-                                background-color: rgba(30, 30, 30, 180);
-                                border-radius: 12px;
+                                /* Colors */
+                                background-color: rgba(30, 30, 30, 0.5);
+
+                                /* Fonts */
+                                font-family: Consolas;
+
+                                /* Borders */
+                                border: 1px solid rgba(255, 255, 255, 0.1);
+                                border-radius: 8px;
                                 """)
         
         self.setCentralWidget(container)
-        container.setLayout(layout)
+        container.setLayout(main_layout)
     
 
 if __name__ == "__main__":
     # --- Application Setup --- #
     app = QApplication(sys.argv)
+    screen = QApplication.primaryScreen().geometry()
 
     # --- Window Setup --- #
+    width = 680
+    height = 120
+    x =  (screen.width() - width) // 2
+    y = 16
     window = MainWindow() # Empty window container
-    window.resize(680, 120) # Resize window
+    window.resize(width, height) # Resize window
+    window.move(x, y)
     window.show() # Windows are invisible by default
 
     # --- Event Loop --- #
