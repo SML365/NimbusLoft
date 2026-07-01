@@ -4,6 +4,10 @@ from PySide6.QtCore import Qt, QTimer, QPoint
 from PySide6.QtGui import QCursor
 import sys
 
+
+# --- Variable Definitions --- #
+shelf_state = 0
+
 # --- Window Contents --- #
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -18,9 +22,44 @@ class MainWindow(QMainWindow):
         
         self.setAttribute(Qt.WA_TranslucentBackground)
 
+        # --- Timer Setup --- #
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update_position)
+        self.timer.start(50)
+
+        # --- Clear Button --- #
+        self.clear_button = QPushButton("Clear")
+        self.clear_button.clicked.connect(self.close) # Does nothing so far
+        self.clear_button.setFixedSize(50, 20)
+        self.clear_button.setStyleSheet("""
+                                        QPushButton
+                                        {
+                                            /* Colors */
+                                            color: #FFFFFF;
+                                            background-color: rgba(30, 30, 30, 0.0);
+                                           
+                                            /* Fonts */
+                                            font-size: 14px;
+                                            font-weight: 500;
+
+                                            /* Borders */
+                                            border: none;
+                                            border-radius: 6px;
+                                            padding: 2px;                                       
+                                        }
+                                        
+                                        QPushButton:hover
+                                        {
+                                            /* Colors */
+                                            color: #FFFFFF;
+                                            background-color: rgba(100, 255, 100, 0.5);
+                                        }
+                                        """)
+
+
         # --- Settings Button --- #
         self.settings_button = QPushButton("Settings")
-        self.settings_button.clicked.connect(self.close)
+        self.settings_button.clicked.connect(self.close) # Does nothing so far
         self.settings_button.setFixedSize(70, 20)
         self.settings_button.setStyleSheet("""
                                             QPushButton
@@ -73,7 +112,7 @@ class MainWindow(QMainWindow):
                                         {
                                             /* Colors */
                                             color: #FFFFFF;
-                                            background-color: rgba(255, 65, 65, 0.5);
+                                            background-color: rgba(255, 65, 65, 0.6);
                                         }
                                         """)
         
@@ -81,6 +120,7 @@ class MainWindow(QMainWindow):
         main_layout = QVBoxLayout()
         top_bar = QHBoxLayout()
         top_bar.addStretch()
+        top_bar.addWidget(self.clear_button)
         top_bar.addWidget(self.settings_button)
         top_bar.addWidget(self.close_button)
         top_bar_widget = QWidget()
@@ -109,7 +149,29 @@ class MainWindow(QMainWindow):
 
     # --- Methods --- #
 
+    def update_position(self):
+        global shelf_state
+        pos = QCursor.pos()
+        print(pos)
+
+        if pos.y() < 5 and shelf_state == 0:
+            self.open_shelf()
+            shelf_state = 1
+
+        if pos.y() > 140 and shelf_state == 1:
+            self.close_shelf()
+            shelf_state = 0
+        
     # --- Show/Hide Window --- #
+    def open_shelf(self):
+        global wx
+        global wy
+        window.move(wx, 10)
+    
+    def close_shelf(self):
+        global wx
+        global wy
+        window.move(wx, 0 - self.height())
     
 
 if __name__ == "__main__":
@@ -120,11 +182,13 @@ if __name__ == "__main__":
     # --- Window Setup --- #
     width = 680
     height = 120
-    x =  (screen.width() - width) // 2
-    y = 10
+    global wx
+    global wy
+    wx = (screen.width() - width) // 2
+    wy= 10
     window = MainWindow() # Empty window container
     window.resize(width, height) # Resize window
-    window.move(x, y)
+    window.move(wx, wy)
     window.show() # Windows are invisible by default
 
     # --- Event Loop --- #
