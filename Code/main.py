@@ -19,11 +19,38 @@ class MainWindow(QMainWindow):
         self.setAttribute(Qt.WA_TranslucentBackground)
 
         # --- Settings Button --- #
+        self.settings_button = QPushButton("Settings")
+        self.settings_button.clicked.connect(self.close)
+        self.settings_button.setFixedSize(70, 20)
+        self.settings_button.setStyleSheet("""
+                                            QPushButton
+                                            {
+                                                /* Colors */
+                                                color: #FFFFFF;
+                                                background-color: rgba(30, 30, 30, 0.0);
+                                           
+                                                /* Fonts */
+                                                font-size: 14px;
+                                                font-weight: 500;
+                                           
+                                                /* Borders */
+                                                border: none;
+                                                border-radius: 6px;
+                                                padding: 2px;
+                                            }
+                                           
+                                            QPushButton:hover
+                                            {
+                                                /* Colors */
+                                                color: #FFFFFF;
+                                                background-color: rgba(120, 130, 255, 0.7);
+                                            }
+                                            """)
     
         # --- Close button --- #
-        self.close_button = QPushButton("Quit") # Define button
-        self.close_button.clicked.connect(self.close) # Button action
-        self.close_button.setFixedSize(40, 20)
+        self.close_button = QPushButton("Quit")
+        self.close_button.clicked.connect(self.close)
+        self.close_button.setFixedSize(42, 20)
         self.close_button.setStyleSheet("""
                                         QPushButton 
                                         {                                        
@@ -39,6 +66,7 @@ class MainWindow(QMainWindow):
                                             /* Borders */
                                             border: none;
                                             border-radius: 6px;
+                                            padding: 2px;
                                         }
 
                                         QPushButton:hover
@@ -53,6 +81,7 @@ class MainWindow(QMainWindow):
         main_layout = QVBoxLayout()
         top_bar = QHBoxLayout()
         top_bar.addStretch()
+        top_bar.addWidget(self.settings_button)
         top_bar.addWidget(self.close_button)
         top_bar_widget = QWidget()
         top_bar_widget.setLayout(top_bar)
