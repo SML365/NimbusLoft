@@ -1,17 +1,108 @@
 # --- Import Dependencies --- #
-from PySide6.QtWidgets import QWidget, QApplication, QMainWindow, QPushButton, QVBoxLayout, QHBoxLayout
-from PySide6.QtCore import Qt, QTimer, QPoint
-from PySide6.QtGui import QCursor
+from PySide6.QtWidgets import QWidget, QApplication, QMainWindow, QPushButton, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QFileIconProvider, QScrollArea
+from PySide6.QtCore import Qt, QTimer, QPropertyAnimation, QEasingCurve, QPoint, QFileInfo, QSize
+from PySide6.QtGui import QCursor, QFontMetrics
+from BlurWindow.blurWindow import blur
+from pathlib import Path
+from dataclasses import dataclass
 import sys
 
 
 # --- Variable Definitions --- #
-shelf_state = 0
+global wx
+global wy
+files = []
+shelf_state = 1
+version = "v0.0.0"
+icon_provider = QFileIconProvider()
+
+
+# --- Drag and Drop Dataclasses --- #
+@dataclass
+class ClipboardItem:
+    path: Path
+    name: str
+    is_dir: bool
+    size: int | None
+
+# --- File Card --- #
+class FileCard(QFrame):
+    def __init__(self, item: ClipboardItem):
+        super().__init__()
+        layout = QHBoxLayout()
+        layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
+        self.setLayout(layout)
+        self.setFixedHeight(50)
+        self.setFixedWidth(150)
+        self.setStyleSheet("""
+                            QFrame
+                            {
+                                /* Colors */
+                                background-color: rgba(30, 30, 30, 0.5);
+
+                                /* Borders */
+                                border-radius: 6px;
+                            }
+                            
+                            QFrame:hover
+                            {
+                                /* Colors */
+                                background-color: rgba(50, 50, 50, 0.5);
+                            }
+                            """)
+
+        icon = icon_provider.icon(QFileInfo(str(item.path)))
+        icon_label = QLabel()
+        icon_label.setPixmap(icon.pixmap(QSize(24, 24)))
+        icon_label.setFixedWidth(24)
+        icon_label.setFixedHeight(24)
+        icon_label.setStyleSheet("""
+                                QLabel
+                                {
+                                    /* Colors */
+                                    background-color: rgba(0, 0, 0, 0.0);
+                                
+                                    /* Borders */
+                                    border: none;
+                                }
+                                """)
+
+        name_label = QLabel(item.name)
+        name_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        name_label.setAlignment(Qt.AlignmentFlag.AlignVCenter)
+        name_label.setStyleSheet("""
+                                QLabel
+                                {
+                                    /* Colors */
+                                    background-color: rgba(0, 0, 0, 0.0);
+                                 
+                                    /* Fonts */
+                                    font-size: 14px;
+                                 
+                                    /* Borders */
+                                    border: none;
+                                }
+                                """)
+        font_metrics = QFontMetrics(name_label.font())
+        elided_name = font_metrics.elidedText(
+            item.name,
+            Qt.TextElideMode.ElideRight,
+            90
+        )
+
+        name_label.setText(elided_name)
+
+        layout.addWidget(icon_label)
+        layout.addWidget(name_label)
+
 
 # --- Window Contents --- #
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+
+        # --- Variables --- #
+        self.items = []
 
         # --- Window Attributes --- #
         self.setWindowFlags(
@@ -21,16 +112,37 @@ class MainWindow(QMainWindow):
                             )
         
         self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setAcceptDrops(True)
 
         # --- Timer Setup --- #
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_position)
         self.timer.start(50)
 
+        # --- NimbusLoft Text --- #
+        self.title_text = QLabel(f"NimbusLoft {version}")
+        self.title_text.setFixedSize(150, 25)
+        self.title_text.setStyleSheet("""
+                                    QLabel
+                                    {
+                                        /* Colors */
+                                        color: #FFFFFF;
+                                        background-color: rgba(30, 30, 30, 0.0);
+
+                                        /* Fonts */  
+                                        font-size: 16px;
+                                        font-weight: 700;
+                                      
+                                        /* Borders */
+                                        border: none;
+                                    }
+                                    """)
+
+
         # --- Clear Button --- #
         self.clear_button = QPushButton("Clear")
         self.clear_button.clicked.connect(self.close) # Does nothing so far
-        self.clear_button.setFixedSize(50, 20)
+        self.clear_button.setFixedSize(50, 25)
         self.clear_button.setStyleSheet("""
                                         QPushButton
                                         {
@@ -40,7 +152,7 @@ class MainWindow(QMainWindow):
                                            
                                             /* Fonts */
                                             font-size: 14px;
-                                            font-weight: 500;
+                                            font-weight: 550;
 
                                             /* Borders */
                                             border: none;
@@ -60,7 +172,7 @@ class MainWindow(QMainWindow):
         # --- Settings Button --- #
         self.settings_button = QPushButton("Settings")
         self.settings_button.clicked.connect(self.close) # Does nothing so far
-        self.settings_button.setFixedSize(70, 20)
+        self.settings_button.setFixedSize(70, 25)
         self.settings_button.setStyleSheet("""
                                             QPushButton
                                             {
@@ -70,7 +182,7 @@ class MainWindow(QMainWindow):
                                            
                                                 /* Fonts */
                                                 font-size: 14px;
-                                                font-weight: 500;
+                                                font-weight: 550;
                                            
                                                 /* Borders */
                                                 border: none;
@@ -89,7 +201,7 @@ class MainWindow(QMainWindow):
         # --- Close button --- #
         self.close_button = QPushButton("Quit")
         self.close_button.clicked.connect(self.close)
-        self.close_button.setFixedSize(42, 20)
+        self.close_button.setFixedSize(42, 25)
         self.close_button.setStyleSheet("""
                                         QPushButton 
                                         {                                        
@@ -99,7 +211,7 @@ class MainWindow(QMainWindow):
 
                                             /* Fonts */
                                             font-size: 14px;
-                                            font-weight: 500;
+                                            font-weight: 550;
 
                                         
                                             /* Borders */
@@ -119,6 +231,10 @@ class MainWindow(QMainWindow):
         # --- Layout --- #
         main_layout = QVBoxLayout()
         top_bar = QHBoxLayout()
+        self.file_layout = QHBoxLayout()
+        self.file_layout.setSpacing(8)
+        self.file_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        top_bar.addWidget(self.title_text)
         top_bar.addStretch()
         top_bar.addWidget(self.clear_button)
         top_bar.addWidget(self.settings_button)
@@ -128,15 +244,17 @@ class MainWindow(QMainWindow):
 
         main_layout.addWidget(top_bar_widget)
         main_layout.addStretch()
+        main_layout.addLayout(self.file_layout)
 
         # --- Container --- #
         container = QWidget()
+        blur(self.winId())
         container.setStyleSheet("""
                                 /* Colors */
                                 background-color: rgba(30, 30, 30, 0.5);
 
                                 /* Fonts */
-                                font-family: Consolas;
+                                font-family: Segoe UI;
 
                                 /* Borders */
                                 border: 1px solid rgba(255, 255, 255, 0.1);
@@ -148,30 +266,81 @@ class MainWindow(QMainWindow):
         container.setLayout(main_layout)
 
     # --- Methods --- #
-
     def update_position(self):
         global shelf_state
         pos = QCursor.pos()
-        print(pos)
 
         if pos.y() < 5 and shelf_state == 0:
-            self.open_shelf()
-            shelf_state = 1
+            if pos.x() > (screen.width() / 2) - (self.width() / 2) and pos.x() < (screen.width() / 2) + (self.width() / 2):
+                self.open_shelf()
+                shelf_state = 1
 
         if pos.y() > 140 and shelf_state == 1:
             self.close_shelf()
             shelf_state = 0
+
+    def add_clipboard_item(self, item: ClipboardItem):
+        self.items.append(item)
+        card = FileCard(item)
+        self.file_layout.addWidget(card)
+        self.centralWidget().update()
         
     # --- Show/Hide Window --- #
     def open_shelf(self):
         global wx
-        global wy
-        window.move(wx, 10)
+        self.anim = QPropertyAnimation(self, b"pos")
+        self.anim.setDuration(400)
+
+        self.anim.setStartValue(self.pos())
+        self.anim.setEndValue(QPoint(wx, 10))
+
+        self.anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+        self.anim.start()
     
     def close_shelf(self):
         global wx
-        global wy
-        window.move(wx, 0 - self.height())
+        
+        self.anim = QPropertyAnimation(self, b"pos")
+        self.anim.setDuration(400)
+
+        self.anim.setStartValue(self.pos())
+        self.anim.setEndValue(QPoint(wx, -140))
+
+        self.anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+        self.anim.start()
+
+    # --- Drag + Drop Files --- #
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasUrls():
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+
+    def dragMoveEvent(self, event):
+        if event.mimeData().hasUrls():
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+    
+    def dropEvent(self, event):
+        if event.mimeData().hasUrls():
+            for url in event.mimeData().urls():
+                if not url.isLocalFile():
+                    continue
+            
+                path = Path(url.toLocalFile())
+
+                item = ClipboardItem(
+                    path = path,
+                    name = path.name,
+                    is_dir=path.is_dir(),
+                    size=None if path.is_dir() else path.stat().st_size
+                )
+
+                self.add_clipboard_item(item)
+
+            event.acceptProposedAction()
+        
     
 
 if __name__ == "__main__":
@@ -182,8 +351,6 @@ if __name__ == "__main__":
     # --- Window Setup --- #
     width = 680
     height = 120
-    global wx
-    global wy
     wx = (screen.width() - width) // 2
     wy= 10
     window = MainWindow() # Empty window container
