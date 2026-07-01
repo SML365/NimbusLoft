@@ -1,6 +1,7 @@
 # --- Import Dependencies --- #
 from PySide6.QtWidgets import QWidget, QApplication, QMainWindow, QPushButton, QVBoxLayout, QHBoxLayout
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QTimer, QPoint
+from PySide6.QtGui import QCursor
 import sys
 
 # --- Window Contents --- #
@@ -10,11 +11,12 @@ class MainWindow(QMainWindow):
 
         # --- Window Attributes --- #
         self.setWindowFlags(
-            Qt.WindowType.FramelessWindowHint,
-            )
-        self.setAttribute(
-            Qt.WA_TranslucentBackground
-        )
+                            Qt.WindowType.FramelessWindowHint | # Frameless window
+                            Qt.WindowStaysOnTopHint | # Always stays on top
+                            Qt.Tool # Doesn't show up in alt + tab and taskbar
+                            )
+        
+        self.setAttribute(Qt.WA_TranslucentBackground)
 
         # --- Settings Button --- #
     
@@ -71,9 +73,14 @@ class MainWindow(QMainWindow):
                                 border: 1px solid rgba(255, 255, 255, 0.1);
                                 border-radius: 8px;
                                 """)
+                                
         
         self.setCentralWidget(container)
         container.setLayout(main_layout)
+
+    # --- Methods --- #
+
+    # --- Show/Hide Window --- #
     
 
 if __name__ == "__main__":
@@ -85,7 +92,7 @@ if __name__ == "__main__":
     width = 680
     height = 120
     x =  (screen.width() - width) // 2
-    y = 16
+    y = 10
     window = MainWindow() # Empty window container
     window.resize(width, height) # Resize window
     window.move(x, y)
