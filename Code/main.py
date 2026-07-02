@@ -1,7 +1,7 @@
 # --- Import Dependencies --- #
 from PySide6.QtWidgets import QWidget, QApplication, QMainWindow, QPushButton, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QFileIconProvider, QScrollArea
-from PySide6.QtCore import Qt, QTimer, QPropertyAnimation, QEasingCurve, QPoint, QFileInfo, QSize
-from PySide6.QtGui import QCursor, QFontMetrics
+from PySide6.QtCore import Qt, QTimer, QPropertyAnimation, QEasingCurve, QPoint, QFileInfo, QSize, QMimeData, QUrl
+from PySide6.QtGui import QCursor, QFontMetrics, QDrag
 from BlurWindow.blurWindow import blur
 from pathlib import Path
 from dataclasses import dataclass
@@ -32,13 +32,13 @@ class FileCard(QFrame):
         layout = QHBoxLayout()
         layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
         self.setLayout(layout)
-        self.setFixedHeight(50)
+        self.setFixedHeight(45)
         self.setFixedWidth(150)
         self.setStyleSheet("""
                             QFrame
                             {
                                 /* Colors */
-                                background-color: rgba(30, 30, 30, 0.5);
+                                background-color: rgba(55, 55, 55, 0.5);
 
                                 /* Borders */
                                 border-radius: 6px;
@@ -47,7 +47,7 @@ class FileCard(QFrame):
                             QFrame:hover
                             {
                                 /* Colors */
-                                background-color: rgba(50, 50, 50, 0.5);
+                                background-color: rgba(75, 75, 75, 0.5);
                             }
                             """)
 
@@ -95,6 +95,35 @@ class FileCard(QFrame):
         layout.addWidget(icon_label)
         layout.addWidget(name_label)
 
+        self.item = item
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.drag_start_position = event.position().toPoint()
+
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        if not (event.buttons() & Qt.LeftButton):
+            return
+
+        if (event.position().toPoint() - self.drag_start_position).manhattanLength() < QApplication.startDragDistance():
+            return
+        
+        drag = QDrag(self)
+        mime = QMimeData()
+
+        url = QUrl.fromLocalFile(str(self.item.path))
+        mime.setUrls([url])
+
+        drag.setMimeData(mime)
+
+        icon = icon_provider.icon(QFileInfo(str(self.item.path)))
+        drag.setPixmap(icon.pixmap(32, 32))
+
+        drag.exec(Qt.CopyAction | Qt.MoveAction)
+
+        super().mouseMoveEvent(event)
 
 # --- Window Contents --- #
 class MainWindow(QMainWindow):
@@ -228,12 +257,49 @@ class MainWindow(QMainWindow):
                                         }
                                         """)
         
-        # --- Layout --- #
+        # --- Layout Definitions --- #
         main_layout = QVBoxLayout()
+        self.file_container = QWidget()
         top_bar = QHBoxLayout()
-        self.file_layout = QHBoxLayout()
-        self.file_layout.setSpacing(8)
-        self.file_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+
+        # --- File Container Layout --- #
+        self.file_layout = QHBoxLayout(self.file_container)
+        self.file_layout.setSpacing(4)
+        self.file_layout.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        self.file_layout.setContentsMargins(4, 4, 4, 4)
+        self.file_container.setFixedHeight(53)
+        self.file_container.setLayout(self.file_layout)
+        self.file_container.setStyleSheet("""
+                                        QWidget
+                                        {
+                                            /* Colors */
+                                            background: transparent;
+                             
+                                            /* Borders */
+                                            border: none;
+                                            border-radius: 6px;
+                                        }
+                                        """)
+
+        # --- Scroll Area Layout --- #
+        scroll = QScrollArea()
+        scroll.setWidget(self.file_container)
+        scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setStyleSheet("""
+                            QScrollBar
+                            {
+                                /* Colors */
+                                background: none;
+                             
+                                /* Borders */
+                                border: none;
+                            }
+                            """)
+
+        # --- Top Bar Layout --- #
         top_bar.addWidget(self.title_text)
         top_bar.addStretch()
         top_bar.addWidget(self.clear_button)
@@ -242,23 +308,27 @@ class MainWindow(QMainWindow):
         top_bar_widget = QWidget()
         top_bar_widget.setLayout(top_bar)
 
+        # --- Show the Widgets --- #
         main_layout.addWidget(top_bar_widget)
-        main_layout.addStretch()
-        main_layout.addLayout(self.file_layout)
+        
+        main_layout.addWidget(scroll)
 
         # --- Container --- #
         container = QWidget()
         blur(self.winId())
         container.setStyleSheet("""
-                                /* Colors */
-                                background-color: rgba(30, 30, 30, 0.5);
+                                QWidget
+                                {
+                                    /* Colors */
+                                    background-color: rgba(30, 30, 30, 0.5);
 
-                                /* Fonts */
-                                font-family: Segoe UI;
+                                    /* Fonts */
+                                    font-family: Segoe UI;
 
-                                /* Borders */
-                                border: 1px solid rgba(255, 255, 255, 0.1);
-                                border-radius: 8px;
+                                    /* Borders */
+                                    border: 1px solid rgba(255, 255, 255, 0.1);
+                                    border-radius: 8px;
+                                }
                                 """)
                                 
         
