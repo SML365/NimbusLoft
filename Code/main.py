@@ -1,6 +1,6 @@
 # --- Import Dependencies --- #
 from PySide6.QtWidgets import QWidget, QApplication, QMainWindow, QPushButton, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QFileIconProvider, QScrollArea
-from PySide6.QtCore import Qt, QTimer, QPropertyAnimation, QEasingCurve, QPoint, QFileInfo, QSize, QMimeData, QUrl
+from PySide6.QtCore import Qt, QTimer, QPropertyAnimation, QEasingCurve, QPoint, QFileInfo, QSize, QMimeData, QUrl, Signal
 from PySide6.QtGui import QCursor, QFontMetrics, QDrag
 from BlurWindow.blurWindow import blur
 from pathlib import Path
@@ -27,8 +27,11 @@ class ClipboardItem:
 
 # --- File Card --- #
 class FileCard(QFrame):
+    hovered = Signal(str)
+
     def __init__(self, item: ClipboardItem):
         super().__init__()
+        self.setMouseTracking(True)
         layout = QHBoxLayout()
         layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
         self.setLayout(layout)
@@ -97,6 +100,15 @@ class FileCard(QFrame):
 
         self.item = item
 
+    def enterEvent(self, event):
+        self.hovered.emit(self.item.name)
+        event.accept()
+
+
+    def leaveEvent(self, event):
+        self.hovered.emit("")
+        event.accept()
+
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
             self.drag_start_position = event.position().toPoint()
@@ -123,7 +135,7 @@ class FileCard(QFrame):
 
         drag.exec(Qt.CopyAction | Qt.MoveAction)
 
-        super().mouseMoveEvent(event)
+        return
 
 # --- Window Contents --- #
 class MainWindow(QMainWindow):
@@ -150,7 +162,7 @@ class MainWindow(QMainWindow):
 
         # --- NimbusLoft Text --- #
         self.title_text = QLabel(f"NimbusLoft {version}")
-        self.title_text.setFixedSize(150, 25)
+        self.title_text.setFixedSize(450, 25)
         self.title_text.setStyleSheet("""
                                     QLabel
                                     {
@@ -170,7 +182,7 @@ class MainWindow(QMainWindow):
 
         # --- Clear Button --- #
         self.clear_button = QPushButton("Clear")
-        self.clear_button.clicked.connect(self.close) # Does nothing so far
+        self.clear_button.clicked.connect(self.clear_files) # Does nothing so far
         self.clear_button.setFixedSize(50, 25)
         self.clear_button.setStyleSheet("""
                                         QPushButton
@@ -197,35 +209,6 @@ class MainWindow(QMainWindow):
                                         }
                                         """)
 
-
-        # --- Settings Button --- #
-        self.settings_button = QPushButton("Settings")
-        self.settings_button.clicked.connect(self.close) # Does nothing so far
-        self.settings_button.setFixedSize(70, 25)
-        self.settings_button.setStyleSheet("""
-                                            QPushButton
-                                            {
-                                                /* Colors */
-                                                color: #FFFFFF;
-                                                background-color: rgba(30, 30, 30, 0.0);
-                                           
-                                                /* Fonts */
-                                                font-size: 14px;
-                                                font-weight: 550;
-                                           
-                                                /* Borders */
-                                                border: none;
-                                                border-radius: 6px;
-                                                padding: 2px;
-                                            }
-                                           
-                                            QPushButton:hover
-                                            {
-                                                /* Colors */
-                                                color: #FFFFFF;
-                                                background-color: rgba(120, 130, 255, 0.7);
-                                            }
-                                            """)
     
         # --- Close button --- #
         self.close_button = QPushButton("Quit")
@@ -285,25 +268,15 @@ class MainWindow(QMainWindow):
         scroll = QScrollArea()
         scroll.setWidget(self.file_container)
         scroll.setWidgetResizable(True)
+        scroll.setSizeAdjustPolicy(QScrollArea.AdjustIgnored)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         scroll.setFrameShape(QFrame.NoFrame)
-        scroll.setStyleSheet("""
-                            QScrollBar
-                            {
-                                /* Colors */
-                                background: none;
-                             
-                                /* Borders */
-                                border: none;
-                            }
-                            """)
 
         # --- Top Bar Layout --- #
         top_bar.addWidget(self.title_text)
         top_bar.addStretch()
         top_bar.addWidget(self.clear_button)
-        top_bar.addWidget(self.settings_button)
         top_bar.addWidget(self.close_button)
         top_bar_widget = QWidget()
         top_bar_widget.setLayout(top_bar)
@@ -349,9 +322,29 @@ class MainWindow(QMainWindow):
             self.close_shelf()
             shelf_state = 0
 
+    def clear_files(self):
+        while self.file_layout.count():
+            item = self.file_layout.takeAt(0)
+            widget = item.widget()
+
+            if widget:
+                widget.deleteLater()
+            
+        self.items.clear()
+
+        self.title_text.setText(f"NimbusLoft {version}")
+        self.centralWidget().update()
+
+    def update_title(self, name):
+        if name:
+            self.title_text.setText(name)
+        else:
+            self.title_text.setText(f"NimbusLoft {version}")
+
     def add_clipboard_item(self, item: ClipboardItem):
         self.items.append(item)
         card = FileCard(item)
+        card.hovered.connect(self.update_title)
         self.file_layout.addWidget(card)
         self.centralWidget().update()
         
