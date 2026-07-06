@@ -1,7 +1,7 @@
 # --- Import Dependencies --- #
-from PySide6.QtWidgets import QWidget, QApplication, QMainWindow, QPushButton, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QFileIconProvider, QScrollArea, QMenu
+from PySide6.QtWidgets import QWidget, QApplication, QMainWindow, QPushButton, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QFileIconProvider, QScrollArea, QMenu, QStyle
 from PySide6.QtCore import Qt, QTimer, QPropertyAnimation, QEasingCurve, QPoint, QFileInfo, QSize, QMimeData, QUrl, Signal
-from PySide6.QtGui import QCursor, QFontMetrics, QDrag, QAction
+from PySide6.QtGui import QCursor, QFontMetrics, QDrag, QAction, QDesktopServices
 from BlurWindow.blurWindow import blur
 from pathlib import Path
 from dataclasses import dataclass
@@ -23,16 +23,17 @@ firstboot = 1
 # --- Drag and Drop Dataclasses --- #
 @dataclass
 class ClipboardItem:
-    path: Path
-    name: str
-    is_dir: bool
-    size: int | None
+    path: Path | None = None
+    url: str | None = None
+    name: str | None = None
+    is_dir: bool | None = False
+    size: int | None = 0
     color_code: str | None = "rgba(55, 55, 55, 0.5)"
     hover_color: str | None = "rgba(75, 75, 75, 0.5)"
 
 # --- File Card --- #
 class FileCard(QFrame):
-    hovered = Signal(str, int)
+    hovered = Signal(str, int, str)
 
     def __init__(self, item: ClipboardItem):
         super().__init__()
@@ -59,7 +60,11 @@ class FileCard(QFrame):
                             }}
                             """)
 
-        icon = icon_provider.icon(QFileInfo(str(item.path)))
+        if item.path is not None:
+            icon = icon_provider.icon(QFileInfo(str(item.path)))
+        else:
+            icon = self.style().standardIcon(QStyle.SP_ComputerIcon)
+
         icon_label = QLabel()
         icon_label.setPixmap(icon.pixmap(QSize(24, 24)))
         icon_label.setFixedWidth(24)
@@ -107,12 +112,12 @@ class FileCard(QFrame):
         self.item = item
 
     def enterEvent(self, event):
-        self.hovered.emit(self.item.name, self.item.size)
+        self.hovered.emit(self.item.name, self.item.size, self.item.url)
         event.accept()
 
 
     def leaveEvent(self, event):
-        self.hovered.emit("", 0)
+        self.hovered.emit("", 0, "")
         event.accept()
 
     def mousePressEvent(self, event):
@@ -131,8 +136,11 @@ class FileCard(QFrame):
         drag = QDrag(self)
         mime = QMimeData()
 
-        url = QUrl.fromLocalFile(str(self.item.path))
-        mime.setUrls([url])
+        if self.item.url:
+            mime.setUrls([QUrl(self.item.url)])
+            mime.setText(self.item.url)
+        else:
+            mime.setUrls([QUrl.fromLocalFile(str(self.item.path))])
 
         drag.setMimeData(mime)
 
@@ -404,7 +412,7 @@ class MainWindow(QMainWindow):
         self.title_text.setText(f"NimbusLoft {version}")
         self.centralWidget().update()
 
-    def update_title(self, name, size=None):
+    def update_title(self, name, size=None, url=None):
         if name:
             if size is not None:
                 if size >= 1024 * 1024 * 1024:
@@ -416,7 +424,10 @@ class MainWindow(QMainWindow):
                 else:
                     size = f"{size} B"
             if size is not None:
-                self.title_text.setText(f"{name} - {size}")
+                if url == None:
+                    self.title_text.setText(f"{name} - {size}")
+                else:
+                    self.title_text.setText(f"{name} - {url}")
             else:
                 self.title_text.setText(f"{name}")
         else:
@@ -474,18 +485,27 @@ class MainWindow(QMainWindow):
     def dropEvent(self, event):
         if event.mimeData().hasUrls():
             for url in event.mimeData().urls():
-                if not url.isLocalFile():
-                    continue
-            
-                path = Path(url.toLocalFile())
+                if url.isLocalFile():
+                    path = Path(url.toLocalFile())
 
-                item = ClipboardItem(
-                    path = path,
-                    name = path.name,
-                    is_dir=path.is_dir(),
-                    size=None if path.is_dir() else path.stat().st_size,
-                    color_code=None
-                )
+                    item = ClipboardItem(
+                        path = path,
+                        name = path.name,
+                        url = None,
+                        is_dir=path.is_dir(),
+                        size=None if path.is_dir() else path.stat().st_size,
+                        color_code=None
+                    )
+
+                else:
+                    item = ClipboardItem(
+                        path=None,
+                        name=url.host() or url.toString(),
+                        url=url.toString(),
+                        is_dir=None,
+                        size=0,
+                        color_code=None
+                    )
 
                 self.add_clipboard_item(item)
 
