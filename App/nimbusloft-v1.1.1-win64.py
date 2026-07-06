@@ -7,6 +7,7 @@ from pathlib import Path
 from dataclasses import dataclass
 import sys
 import os
+import time
 
 
 # --- Variable Definitions --- #
@@ -16,7 +17,8 @@ files = []
 shelf_state = 1
 version = "v1.1.1"
 icon_provider = QFileIconProvider()
-
+global firstboot
+firstboot = 1
 
 # --- Drag and Drop Dataclasses --- #
 @dataclass
@@ -440,6 +442,11 @@ class MainWindow(QMainWindow):
         self.anim.start()
     
     def close_shelf(self):
+        global firstboot
+        if firstboot == 1:
+            time.sleep(1)
+            firstboot = 0
+        
         global wx
         
         self.anim = QPropertyAnimation(self, b"pos")
@@ -483,7 +490,6 @@ class MainWindow(QMainWindow):
                 self.add_clipboard_item(item)
 
             event.acceptProposedAction()
-        
     
 # --- Main Application --- #
 if __name__ == "__main__":
