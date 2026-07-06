@@ -15,7 +15,7 @@ global wx
 global wy
 files = []
 shelf_state = 1
-version = "v1.1.1"
+version = "v1.2.0"
 icon_provider = QFileIconProvider()
 global firstboot
 firstboot = 1
