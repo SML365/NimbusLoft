@@ -168,7 +168,7 @@ class FileCard(QFrame):
         cc_menu_action.addAction("Green", lambda: self.set_color_code("rgba(0, 200, 0, 0.5)"))
         cc_menu_action.addAction("Orange", lambda: self.set_color_code("rgba(255, 160, 20, 0.5)"))
         cc_menu_action.addAction("Pink", lambda: self.set_color_code("rgba(255, 105, 180, 0.5)"))
-        cc_menu_action.addAction("Purple", lambda: self.set_color_code("rgba(220, 40, 230, 0.5)"))
+        cc_menu_action.addAction("Purple", lambda: self.set_color_code("rgba(130, 137, 218, 0.5)"))
         cc_menu_action.addAction("Red", lambda: self.set_color_code("rgba(255, 50, 50, 0.5)"))
         cc_menu_action.addAction("Yellow", lambda: self.set_color_code("rgba(240, 220, 0, 0.5)"))
 
