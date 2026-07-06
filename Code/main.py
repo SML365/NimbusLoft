@@ -148,28 +148,25 @@ class FileCard(QFrame):
 
         open_action = QAction("Open", self)
         remove_action = QAction("Remove", self)
-        mark_for_deletion_action = QAction("Mark for Deletion", self)
-        cc_menu = QMenu("Color Code", self)
+        cc_menu_action = QMenu("Color Code", self)
 
         open_action.triggered.connect(self.open_file)
         remove_action.triggered.connect(self.remove_file)
-        mark_for_deletion_action.triggered.connect(self.mark_for_deletion)
 
         menu.addAction(open_action)
         menu.addSeparator()
         menu.addAction(remove_action)
-        menu.addAction(mark_for_deletion_action)
-        menu.addMenu(cc_menu)
+        menu.addMenu(cc_menu_action)
 
-        cc_menu.addAction("Default", lambda: self.set_color_code("rgba(55, 55, 55, 0.5)"))
-        cc_menu.addAction("Blue", lambda: self.set_color_code("rgba(120, 130, 240, 0.5)"))
-        cc_menu.addAction("Cyan", lambda: self.set_color_code("rgba(0, 200, 200, 0.5)"))
-        cc_menu.addAction("Green", lambda: self.set_color_code("rgba(0, 200, 0, 0.5)"))
-        cc_menu.addAction("Orange", lambda: self.set_color_code("rgba(255, 160, 20, 0.5)"))
-        cc_menu.addAction("Pink", lambda: self.set_color_code("rgba(255, 105, 180, 0.5)"))
-        cc_menu.addAction("Purple", lambda: self.set_color_code("rgba(220, 40, 230, 0.5)"))
-        cc_menu.addAction("Red", lambda: self.set_color_code("rgba(255, 50, 50, 0.5)"))
-        cc_menu.addAction("Yellow", lambda: self.set_color_code("rgba(240, 220, 0, 0.5)"))
+        cc_menu_action.addAction("Default", lambda: self.set_color_code("rgba(55, 55, 55, 0.5)"))
+        cc_menu_action.addAction("Blue", lambda: self.set_color_code("rgba(120, 130, 240, 0.5)"))
+        cc_menu_action.addAction("Cyan", lambda: self.set_color_code("rgba(0, 200, 200, 0.5)"))
+        cc_menu_action.addAction("Green", lambda: self.set_color_code("rgba(0, 200, 0, 0.5)"))
+        cc_menu_action.addAction("Orange", lambda: self.set_color_code("rgba(255, 160, 20, 0.5)"))
+        cc_menu_action.addAction("Pink", lambda: self.set_color_code("rgba(255, 105, 180, 0.5)"))
+        cc_menu_action.addAction("Purple", lambda: self.set_color_code("rgba(220, 40, 230, 0.5)"))
+        cc_menu_action.addAction("Red", lambda: self.set_color_code("rgba(255, 50, 50, 0.5)"))
+        cc_menu_action.addAction("Yellow", lambda: self.set_color_code("rgba(240, 220, 0, 0.5)"))
 
         menu.exec(event.globalPos())
 
@@ -181,10 +178,6 @@ class FileCard(QFrame):
         parent_layout.removeWidget(self)
         self.deleteLater()
 
-    def mark_for_deletion(self):
-        # Placeholder for marking the file for deletion
-        print(f"Marked {self.item.name} for deletion.")
-    
     def set_color_code(self, color):
         self.item.color_code = color
         self.item.hover_color = color.replace("0.5", "0.7")
