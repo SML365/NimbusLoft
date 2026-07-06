@@ -279,7 +279,7 @@ class MainWindow(QMainWindow):
     
         # --- Close button --- #
         self.close_button = QPushButton("Quit")
-        self.close_button.clicked.connect(self.close)
+        self.close_button.clicked.connect(sys.exit)
         self.close_button.setFixedSize(42, 25)
         self.close_button.setStyleSheet("""
                                         QPushButton 
