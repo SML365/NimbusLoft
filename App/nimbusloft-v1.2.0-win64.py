@@ -112,7 +112,7 @@ class FileCard(QFrame):
         self.item = item
 
     def enterEvent(self, event):
-        self.hovered.emit(self.item.name, self.item.size, self.item.url)
+        self.hovered.emit(self.item.name, self.item.size, self.item.url or "")
         event.accept()
 
 
@@ -426,8 +426,8 @@ class MainWindow(QMainWindow):
                     size = f"{size / 1024:.2f} KB"
                 else:
                     size = f"{size} B"
-            if size is not None:
-                if url == None:
+
+                if url == None or url == "":
                     self.title_text.setText(f"{name} - {size}")
                 else:
                     self.title_text.setText(f"{name} - {url}")
