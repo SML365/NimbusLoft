@@ -31,7 +31,7 @@ class ClipboardItem:
 
 # --- File Card --- #
 class FileCard(QFrame):
-    hovered = Signal(str)
+    hovered = Signal(str, int)
 
     def __init__(self, item: ClipboardItem):
         super().__init__()
@@ -106,12 +106,12 @@ class FileCard(QFrame):
         self.item = item
 
     def enterEvent(self, event):
-        self.hovered.emit(self.item.name)
+        self.hovered.emit(self.item.name, self.item.size)
         event.accept()
 
 
     def leaveEvent(self, event):
-        self.hovered.emit("")
+        self.hovered.emit("", 0)
         event.accept()
 
     def mousePressEvent(self, event):
@@ -397,9 +397,21 @@ class MainWindow(QMainWindow):
         self.title_text.setText(f"NimbusLoft {version}")
         self.centralWidget().update()
 
-    def update_title(self, name):
+    def update_title(self, name, size=None):
         if name:
-            self.title_text.setText(name)
+            if size is not None:
+                if size >= 1024 * 1024 * 1024:
+                    size = f"{size / (1024 * 1024 * 1024):.2f} GB"
+                elif size >= 1024 * 1024:
+                    size = f"{size / (1024 * 1024):.2f} MB"
+                elif size >= 1024:
+                    size = f"{size / 1024:.2f} KB"
+                else:
+                    size = f"{size} B"
+            if size is not None:
+                self.title_text.setText(f"{name} - {size}")
+            else:
+                self.title_text.setText(f"{name}")
         else:
             self.title_text.setText(f"NimbusLoft {version}")
 
