@@ -1,11 +1,13 @@
 # --- Import Dependencies --- #
-from PySide6.QtWidgets import QWidget, QApplication, QMainWindow, QPushButton, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QFileIconProvider, QScrollArea
+from PySide6.QtWidgets import QWidget, QApplication, QMainWindow, QPushButton, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QFileIconProvider, QScrollArea, QMenu
 from PySide6.QtCore import Qt, QTimer, QPropertyAnimation, QEasingCurve, QPoint, QFileInfo, QSize, QMimeData, QUrl, Signal
-from PySide6.QtGui import QCursor, QFontMetrics, QDrag
+from PySide6.QtGui import QCursor, QFontMetrics, QDrag, QAction
 from BlurWindow.blurWindow import blur
 from pathlib import Path
 from dataclasses import dataclass
+import keyboard
 import sys
+import os
 
 
 # --- Variable Definitions --- #
@@ -24,6 +26,8 @@ class ClipboardItem:
     name: str
     is_dir: bool
     size: int | None
+    color_code: str | None = "rgba(55, 55, 55, 0.5)"
+    hover_color: str | None = "rgba(75, 75, 75, 0.5)"
 
 # --- File Card --- #
 class FileCard(QFrame):
@@ -37,21 +41,21 @@ class FileCard(QFrame):
         self.setLayout(layout)
         self.setFixedHeight(45)
         self.setFixedWidth(150)
-        self.setStyleSheet("""
+        self.setStyleSheet(f"""
                             QFrame
-                            {
+                            {{
                                 /* Colors */
-                                background-color: rgba(55, 55, 55, 0.5);
+                                background-color: {item.color_code};
 
                                 /* Borders */
                                 border-radius: 6px;
-                            }
+                            }}
                             
                             QFrame:hover
-                            {
+                            {{
                                 /* Colors */
-                                background-color: rgba(75, 75, 75, 0.5);
-                            }
+                                background-color: {item.hover_color};
+                            }}
                             """)
 
         icon = icon_provider.icon(QFileInfo(str(item.path)))
@@ -81,6 +85,7 @@ class FileCard(QFrame):
                                  
                                     /* Fonts */
                                     font-size: 14px;
+                                    font-weight: 550;
                                  
                                     /* Borders */
                                     border: none;
@@ -136,6 +141,70 @@ class FileCard(QFrame):
         drag.exec(Qt.CopyAction | Qt.MoveAction)
 
         return
+    
+    # --- Right-Click Menu --- #
+    def contextMenuEvent(self, event):
+        menu = QMenu()
+
+        open_action = QAction("Open", self)
+        remove_action = QAction("Remove", self)
+        mark_for_deletion_action = QAction("Mark for Deletion", self)
+        cc_menu = QMenu("Color Code", self)
+
+        open_action.triggered.connect(self.open_file)
+        remove_action.triggered.connect(self.remove_file)
+        mark_for_deletion_action.triggered.connect(self.mark_for_deletion)
+
+        menu.addAction(open_action)
+        menu.addSeparator()
+        menu.addAction(remove_action)
+        menu.addAction(mark_for_deletion_action)
+        menu.addMenu(cc_menu)
+
+        cc_menu.addAction("Default", lambda: self.set_color_code("rgba(55, 55, 55, 0.5)"))
+        cc_menu.addAction("Blue", lambda: self.set_color_code("rgba(120, 130, 240, 0.5)"))
+        cc_menu.addAction("Cyan", lambda: self.set_color_code("rgba(0, 200, 200, 0.5)"))
+        cc_menu.addAction("Green", lambda: self.set_color_code("rgba(0, 200, 0, 0.5)"))
+        cc_menu.addAction("Orange", lambda: self.set_color_code("rgba(255, 160, 20, 0.5)"))
+        cc_menu.addAction("Pink", lambda: self.set_color_code("rgba(255, 105, 180, 0.5)"))
+        cc_menu.addAction("Purple", lambda: self.set_color_code("rgba(220, 40, 230, 0.5)"))
+        cc_menu.addAction("Red", lambda: self.set_color_code("rgba(255, 50, 50, 0.5)"))
+        cc_menu.addAction("Yellow", lambda: self.set_color_code("rgba(240, 220, 0, 0.5)"))
+
+        menu.exec(event.globalPos())
+
+    def open_file(self):
+        os.startfile(str(self.item.path))
+    
+    def remove_file(self):
+        parent_layout = self.parentWidget().layout()
+        parent_layout.removeWidget(self)
+        self.deleteLater()
+
+    def mark_for_deletion(self):
+        # Placeholder for marking the file for deletion
+        print(f"Marked {self.item.name} for deletion.")
+    
+    def set_color_code(self, color):
+        self.item.color_code = color
+        self.item.hover_color = color.replace("0.5", "0.7")
+        self.update_style()
+
+    def update_style(self):
+        self.setStyleSheet(f"""
+            QFrame {{
+                /* Colors */
+                background-color: {self.item.color_code};
+
+                /* Borders */
+                border-radius: 6px;
+            }}
+
+            QFrame:hover {{
+                /* Colors */
+                background-color: {self.item.hover_color};
+            }}
+        """)
 
 # --- Window Contents --- #
 class MainWindow(QMainWindow):
@@ -318,7 +387,7 @@ class MainWindow(QMainWindow):
                 self.open_shelf()
                 shelf_state = 1
 
-        if pos.y() > 140 and shelf_state == 1:
+        if pos.y() > 140 and shelf_state == 1 and QApplication.activePopupWidget() is None:
             self.close_shelf()
             shelf_state = 0
 
@@ -397,7 +466,8 @@ class MainWindow(QMainWindow):
                     path = path,
                     name = path.name,
                     is_dir=path.is_dir(),
-                    size=None if path.is_dir() else path.stat().st_size
+                    size=None if path.is_dir() else path.stat().st_size,
+                    color_code=None
                 )
 
                 self.add_clipboard_item(item)
