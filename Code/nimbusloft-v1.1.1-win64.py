@@ -5,7 +5,6 @@ from PySide6.QtGui import QCursor, QFontMetrics, QDrag, QAction
 from BlurWindow.blurWindow import blur
 from pathlib import Path
 from dataclasses import dataclass
-import keyboard
 import sys
 import os
 
@@ -147,14 +146,17 @@ class FileCard(QFrame):
         menu = QMenu()
 
         open_action = QAction("Open", self)
+        open_in_explorer_action = QAction("Open in Explorer", self)
         remove_action = QAction("Remove", self)
         cc_menu_action = QMenu("Color Code", self)
 
         open_action.triggered.connect(self.open_file)
+        open_in_explorer_action.triggered.connect(self.open_in_explorer)
         remove_action.triggered.connect(self.remove_file)
 
         menu.addAction(open_action)
         menu.addSeparator()
+        menu.addAction(open_in_explorer_action)
         menu.addAction(remove_action)
         menu.addMenu(cc_menu_action)
 
@@ -172,7 +174,10 @@ class FileCard(QFrame):
 
     def open_file(self):
         os.startfile(str(self.item.path))
-    
+
+    def open_in_explorer(self):
+        os.startfile(os.path.dirname(str(self.item.path)))
+
     def remove_file(self):
         parent_layout = self.parentWidget().layout()
         parent_layout.removeWidget(self)
