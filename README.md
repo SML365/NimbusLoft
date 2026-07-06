@@ -8,8 +8,9 @@ NimbusLoft solves a small yet annoying issue: transferring files between website
 1. Move your mouse to the top-center area of your primary display. NimbusLoft should open. Moving your mouse away should close NimbusLoft.
 2. To drop a file into NimbusLoft, drag any file to the top-center area of your primary display. Drop the file into the blank area below the title. The file should appear there.
 3. To remove, open, or change the file's color, just right-click it to open its submenu and select one of the options listed.
-4. To remove all files from NimbusLoft, press the "Clear" button in the top-right corner.
-5. Press "Quit" in the top-right corner to stop running NimbusLoft.
+4. NimbusLoft supports storing URLs too! Just drag one in from your browser to save it and drop it to load. Open also works!
+5. To remove all files from NimbusLoft, press the "Clear" button in the top-right corner.
+6. Press "Quit" in the top-right corner to stop running NimbusLoft.
 
 Windows (64-Bit) only, Windows Executable format (exe).
 
