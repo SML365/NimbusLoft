@@ -15,7 +15,7 @@ global wx
 global wy
 files = []
 shelf_state = 1
-version = "v1.1.0"
+version = "v1.1.1"
 icon_provider = QFileIconProvider()
 
 
@@ -480,7 +480,7 @@ class MainWindow(QMainWindow):
             event.acceptProposedAction()
         
     
-
+# --- Main Application --- #
 if __name__ == "__main__":
     # --- Application Setup --- #
     app = QApplication(sys.argv)
