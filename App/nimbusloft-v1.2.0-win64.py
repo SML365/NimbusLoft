@@ -187,7 +187,6 @@ class FileCard(QFrame):
             os.startfile(str(self.item.path))
         else:
             QDesktopServices.openUrl(QUrl(self.item.url))
-            
 
     def open_in_explorer(self):
         os.startfile(os.path.dirname(str(self.item.path)))
