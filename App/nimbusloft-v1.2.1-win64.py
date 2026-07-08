@@ -15,7 +15,7 @@ global wx
 global wy
 files = []
 shelf_state = 1
-version = "v1.2.0"
+version = "v1.2.1"
 icon_provider = QFileIconProvider()
 global firstboot
 firstboot = 1
@@ -144,7 +144,11 @@ class FileCard(QFrame):
 
         drag.setMimeData(mime)
 
-        icon = icon_provider.icon(QFileInfo(str(self.item.path)))
+        if self.item.path:
+            icon = icon_provider.icon(QFileInfo(str(self.item.path)))
+        else:
+            icon = self.style().standardIcon(QStyle.SP_ComputerIcon)
+
         drag.setPixmap(icon.pixmap(32, 32))
 
         drag.exec(Qt.CopyAction | Qt.MoveAction)
@@ -456,21 +460,23 @@ class MainWindow(QMainWindow):
         self.anim.start()
     
     def close_shelf(self):
-        global firstboot
+        global firstboot, wx
+
+        def start_anim():
+            self.anim = QPropertyAnimation(self, b"pos")
+            self.anim.setDuration(400)
+
+            self.anim.setStartValue(self.pos())
+            self.anim.setEndValue(QPoint(wx, -140))
+
+            self.anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+            self.anim.start()
+
         if firstboot == 1:
-            time.sleep(1)
             firstboot = 0
-        
-        global wx
-        
-        self.anim = QPropertyAnimation(self, b"pos")
-        self.anim.setDuration(400)
-
-        self.anim.setStartValue(self.pos())
-        self.anim.setEndValue(QPoint(wx, -140))
-
-        self.anim.setEasingCurve(QEasingCurve.Type.OutCubic)
-        self.anim.start()
+            QTimer.singleShot(1000, start_anim)
+        else:
+            start_anim()
 
     # --- Drag + Drop Files --- #
     def dragEnterEvent(self, event):
@@ -496,8 +502,8 @@ class MainWindow(QMainWindow):
                         name = path.name,
                         url = None,
                         is_dir=path.is_dir(),
-                        size=None if path.is_dir() else path.stat().st_size,
-                        color_code=None
+                        size=0 if path.is_dir() else path.stat().st_size,
+                        color_code="rgba(55, 55, 55, 0.5)"
                     )
 
                 else:
@@ -507,7 +513,7 @@ class MainWindow(QMainWindow):
                         url=url.toString(),
                         is_dir=None,
                         size=0,
-                        color_code=None
+                        color_code="rgba(55, 55, 55, 0.5)"
                     )
 
                 self.add_clipboard_item(item)
